@@ -7,7 +7,7 @@ using ATMApp.UI;
 
 namespace ATMApp.App
 {
-    public class AtmApp : IUserLogin, IUserAccountActions
+    public class AtmApp : IUserLogin, IUserAccountActions, ITransaction
     {
         private List<UserAccount> userAccountList;
         private UserAccount selectedAccount;
@@ -159,6 +159,16 @@ namespace ATMApp.App
 
             int option = Validator.Convert<int>("1 to confirm");
             return option.Equals(1);
+        }
+
+        public void InsertTransaction(long _UserBankAccountId, TransactionType _tranType, decimal _tranAmount, string _description)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ViewTransaction()
+        {
+            throw new NotImplementedException();
         }
     }
 }
