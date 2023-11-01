@@ -11,6 +11,7 @@ namespace ATMApp.App
     {
         private List<UserAccount> userAccountList;
         private UserAccount selectedAccount;
+        private List<Transaction> _listOfTransactions;
 
         public void Run()
         {
@@ -29,6 +30,8 @@ namespace ATMApp.App
                 new UserAccount{Id = 2, FullName = "Alex Nwafor", AccountNumber = 456789, CardNumber = 654654, CardPin = 456456, AccountBalance = 4000.00m, IsLocked = false},
                 new UserAccount{Id = 3, FullName = "Rene Emezi", AccountNumber = 123555, CardNumber = 987987, CardPin = 789789, AccountBalance = 2000.00m, IsLocked = true},
             };
+
+            _listOfTransactions = new List<Transaction>();
         }
 
         public void CheckUserCardNumAndPassword()
@@ -84,7 +87,7 @@ namespace ATMApp.App
                     CheckBalance();
                     break;
                 case (int)AppMenu.PlaceDesposit:
-                    Console.WriteLine("Placing deposit...");
+                    PlaceDeposit();
                     break;
                 case (int)AppMenu.MakeWithdrawal:
                     Console.WriteLine("Making withdrawal...");
@@ -138,12 +141,20 @@ namespace ATMApp.App
                 return;
             }
 
+            //bind transaction details to transaction object
+            InsertTransaction(selectedAccount.Id, TransactionType.Deposit, transaction_amt, "");
+
+            //update account balance
+            selectedAccount.AccountBalance += transaction_amt;
+
+            Utility.PrintMessage($"Your deposit of {Utility.FormatAmount(transaction_amt)} was successful", true);
 
         }
 
         public void MakeWithdrawal()
         {
-            throw new NotImplementedException();
+            var transaction_amt = 0;
+
         }
 
         private bool PreviewBankNotesCount(int amount)
@@ -163,7 +174,18 @@ namespace ATMApp.App
 
         public void InsertTransaction(long _UserBankAccountId, TransactionType _tranType, decimal _tranAmount, string _description)
         {
-            throw new NotImplementedException();
+            var transaction = new Transaction()
+            {
+                TransactionId = Utility.GetTransactionId(),
+                UserBankAccountId = _UserBankAccountId,
+                TransactionDate = DateTime.Now,
+                TransactionType = _tranType,
+                TransactionAmount = _tranAmount,
+                Description = _description,
+            };
+
+            //add transaction object to list
+            _listOfTransactions.Add(transaction);
         }
 
         public void ViewTransaction()

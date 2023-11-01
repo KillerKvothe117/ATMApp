@@ -9,7 +9,14 @@ namespace ATMApp.UI
 {
     public static class Utility
     {
+        private static long transactionId;
         private static CultureInfo culture = new CultureInfo("IG-NG");
+
+        public static long GetTransactionId()
+        {
+            return ++transactionId;
+        }
+
         public static string GetSecretInput(string prompt)
         {
             bool isPrompt = true;
