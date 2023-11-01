@@ -9,6 +9,8 @@ namespace ATMApp.UI
 {
     public static class AppScreen
     {
+        internal const string currency = "N ";
+
         internal static void Welcome()
         {
             //clears the console screen

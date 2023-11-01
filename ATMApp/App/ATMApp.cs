@@ -113,12 +113,52 @@ namespace ATMApp.App
 
         public void PlaceDeposit()
         {
-            throw new NotImplementedException();
+            Console.WriteLine("\nOnly multiples of 500 and 1000 naira allowed. \n");
+            var transaction_amt = Validator.Convert<int>($"amount {AppScreen.currency}");
+
+            //simulate counting
+            Console.WriteLine("\nChecking and Counting bank notes.");
+            Utility.PrintDotAnimation();
+            Console.WriteLine("");
+
+            //some guard clause
+            if (transaction_amt <= 0)
+            {
+                Utility.PrintMessage("Amount needs to be greater than zero. Try again", false);
+                return;
+            }
+            if (transaction_amt % 500 != 0)
+            {
+                Utility.PrintMessage("Enter deposit in multiples of 500 or 1000. Try again", false);
+                return;
+            }
+            if (PreviewBankNotesCount(transaction_amt) == false)
+            {
+                Utility.PrintMessage("You have cancelled your action.", false);
+                return;
+            }
+
+
         }
 
         public void MakeWithdrawal()
         {
             throw new NotImplementedException();
+        }
+
+        private bool PreviewBankNotesCount(int amount)
+        {
+            int thousandNotesCount = amount / 1000;
+            int fiveHundredNotesCount = (amount % 1000) / 500;
+
+            Console.WriteLine("\nSummary");
+            Console.WriteLine("------");
+            Console.WriteLine($"{AppScreen.currency}1000 X {thousandNotesCount} = {1000 * thousandNotesCount}");
+            Console.WriteLine($"{AppScreen.currency}500 X {fiveHundredNotesCount} = {500 * fiveHundredNotesCount}");
+            Console.WriteLine($"Total amount: {Utility.FormatAmount(amount)}\n\n");
+
+            int option = Validator.Convert<int>("1 to confirm");
+            return option.Equals(1);
         }
     }
 }
