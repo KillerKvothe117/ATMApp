@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ATMApp.UI
 {
-    public static class AppScreen
+    public class AppScreen
     {
         internal const string currency = "N ";
 
@@ -122,6 +122,15 @@ namespace ATMApp.UI
                     return -1;
                     break;
             }
+        }
+
+        internal InternalTransfer InternalTransferForm()
+        {
+            var internalTransfer = new InternalTransfer();
+            internalTransfer.RecipientBankAccountNumber = Validator.Convert<long>("recipient's account number:");
+            internalTransfer.TransferAmount = Validator.Convert<decimal>($"amount {currency}");
+            internalTransfer.RecipientBankAccountName = Utility.GetUserInput("recipient's name");
+            return internalTransfer;
         }
 
     }
