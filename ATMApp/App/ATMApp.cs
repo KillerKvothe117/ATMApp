@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using ConsoleTables;
 using ATMApp.Domain.Entities;
 using ATMApp.Domain.Enums;
 using ATMApp.Domain.Interfaces;
@@ -13,14 +15,25 @@ namespace ATMApp.App
         private UserAccount selectedAccount;
         private List<Transaction> _listOfTransactions;
         private const decimal minimumKeptAmount = 500m;
+        private readonly AppScreen screen;
+
+        public AtmApp()
+        {
+            screen = new AppScreen();
+        }
+
 
         public void Run()
         {
             AppScreen.Welcome();
             CheckUserCardNumAndPassword();
             AppScreen.WelcomeCustomer(selectedAccount.FullName);
-            AppScreen.DisplayAppMenu();
-            ProcessMenuOptions();
+
+            while (true)
+            {
+                AppScreen.DisplayAppMenu();
+                ProcessMenuOptions();
+            }
         }
 
         public void InitializeData()
@@ -94,10 +107,11 @@ namespace ATMApp.App
                     MakeWithdrawal();
                     break;
                 case (int)AppMenu.InternalTransfer:
-                    Console.WriteLine("Making internal transfer...");
+                    var internalTransfer = screen.InternalTransferForm();
+                    ProcessInternalTransfer(internalTransfer);
                     break;
                 case (int)AppMenu.ViewTransaction:
-                    Console.WriteLine("Viewing transactions...");
+                    ViewTransaction();
                     break;
                 case (int)AppMenu.Logout:
                     AppScreen.LogoutProgress();
@@ -158,7 +172,8 @@ namespace ATMApp.App
             int selectedAmount = AppScreen.SelectAmount();
             if (selectedAmount == -1)
             {
-                selectedAmount = AppScreen.SelectAmount();
+                MakeWithdrawal();
+                return;
             }
             else if (selectedAmount != 0)
             {
@@ -238,7 +253,79 @@ namespace ATMApp.App
 
         public void ViewTransaction()
         {
-            throw new NotImplementedException();
+            var filteredTransactionList = _listOfTransactions.Where(t => t.UserBankAccountId == selectedAccount.Id).ToList();
+            //check if there's a transaction
+            if (filteredTransactionList.Count <= 0)
+            {
+                Utility.PrintMessage("You have no transaction yet.", true);
+            }
+            else
+            {
+                var table = new ConsoleTable("Id", "Transaction Date", "Type", "Descriptions", "Amount " + AppScreen.currency);
+                foreach (var tran in filteredTransactionList)
+                {
+                    table.AddRow(tran.TransactionId, tran.TransactionDate, tran.TransactionType, tran.Description, tran.TransactionAmount);
+                }
+                table.Options.EnableCount = false;
+                table.Write();
+                Utility.PrintMessage($"You have {filteredTransactionList.Count} transaction(s)", true);
+            }
+        }
+
+        private void ProcessInternalTransfer(InternalTransfer internalTransfer)
+        {
+            if (internalTransfer.TransferAmount <= 0)
+            {
+                Utility.PrintMessage("Amount needs to be more than zero. Try again.", false);
+                return;
+            }
+            //check sender's account balance
+            if (internalTransfer.TransferAmount > selectedAccount.AccountBalance)
+            {
+                Utility.PrintMessage($"Transfer failed. You do not hav enough balance" +
+                    $" to transfer {Utility.FormatAmount(internalTransfer.TransferAmount)}", false);
+                return;
+            }
+            //check the minimum kept amount 
+            if ((selectedAccount.AccountBalance - internalTransfer.TransferAmount) < minimumKeptAmount)
+            {
+                Utility.PrintMessage($"Transfer failed. Your account needs to have minimum" +
+                    $" {Utility.FormatAmount(minimumKeptAmount)}", false);
+                return;
+            }
+
+            //check reciever's account number is valid
+            var selectedBankAccountReciever = (from userAcc in userAccountList
+                                               where userAcc.AccountNumber == internalTransfer.RecipientBankAccountNumber
+                                               select userAcc).FirstOrDefault();
+            if (selectedBankAccountReciever == null)
+            {
+                Utility.PrintMessage("Transfer failed. Recieber bank account number is invalid.", false);
+                return;
+            }
+            //check receiver's name
+            if (selectedBankAccountReciever.FullName != internalTransfer.RecipientBankAccountName)
+            {
+                Utility.PrintMessage("Transfer Failed. Recipient's bank account name does not match.", false);
+                return;
+            }
+
+            //add transaction to transactions record- sender
+            InsertTransaction(selectedAccount.Id, TransactionType.Transfer, -internalTransfer.TransferAmount, "Transfered " +
+                $"to {selectedBankAccountReciever.AccountNumber} ({selectedBankAccountReciever.FullName})");
+            //update sender's account balance
+            selectedAccount.AccountBalance -= internalTransfer.TransferAmount;
+
+            //add transaction record-reciever
+            InsertTransaction(selectedBankAccountReciever.Id, TransactionType.Transfer, internalTransfer.TransferAmount, "Transfered from " +
+                $"{selectedAccount.AccountNumber}({selectedAccount.FullName})");
+            //update reciever's account balance
+            selectedBankAccountReciever.AccountBalance += internalTransfer.TransferAmount;
+            //print success message
+            Utility.PrintMessage($"You have successfully transfered" +
+                $" {Utility.FormatAmount(internalTransfer.TransferAmount)} to " +
+                $"{internalTransfer.RecipientBankAccountName}", true);
+
         }
     }
 }
